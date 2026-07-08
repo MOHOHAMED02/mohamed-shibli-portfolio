@@ -74,20 +74,20 @@ Currently seeking opportunities to grow as a Junior Developer and contribute to 
   };
 
   return (
-    <motion.div
-      className="page"
-      initial="initial"
-      animate="in"
-      exit="out"
-      variants={pageVariants}
-      transition={pageTransition}
-      style={{ direction: lang === "he" ? "rtl" : "ltr" }}
-    >
-      <h1>{text[lang].title}</h1>
-      <p style={{ whiteSpace: "pre-line", fontSize: "1.1rem", lineHeight: "1.6" }}>
-        {text[lang].desc}
-      </p>
-    </motion.div>
+      <motion.div
+          className="page"
+          initial="initial"
+          animate="in"
+          exit="out"
+          variants={pageVariants}
+          transition={pageTransition}
+          style={{ direction: lang === "he" ? "rtl" : "ltr" }}
+      >
+        <h1>{text[lang].title}</h1>
+        <p style={{ whiteSpace: "pre-line", fontSize: "1.1rem", lineHeight: "1.6" }}>
+          {text[lang].desc}
+        </p>
+      </motion.div>
   );
 }
 
@@ -115,30 +115,30 @@ function Skills({ lang }) {
   ];
 
   return (
-    <motion.div
-      className="page"
-      initial="initial"
-      animate="in"
-      exit="out"
-      variants={pageVariants}
-      transition={pageTransition}
-      style={{ direction: lang === "he" ? "rtl" : "ltr" }}
-    >
-      <h1>{title[lang]}</h1>
-      <div className="skills-grid">
-        {skills.map((s, i) => (
-          <motion.div
-            key={i}
-            className="skill-card"
-            style={accentStyle(i)}
-            whileHover={{ scale: 1.05 }}
-          >
-            <div className="icon">{s.icon}</div>
-            <div className="skill-name">{s.name}</div>
-          </motion.div>
-        ))}
-      </div>
-    </motion.div>
+      <motion.div
+          className="page"
+          initial="initial"
+          animate="in"
+          exit="out"
+          variants={pageVariants}
+          transition={pageTransition}
+          style={{ direction: lang === "he" ? "rtl" : "ltr" }}
+      >
+        <h1>{title[lang]}</h1>
+        <div className="skills-grid">
+          {skills.map((s, i) => (
+              <motion.div
+                  key={i}
+                  className="skill-card"
+                  style={accentStyle(i)}
+                  whileHover={{ scale: 1.05 }}
+              >
+                <div className="icon">{s.icon}</div>
+                <div className="skill-name">{s.name}</div>
+              </motion.div>
+          ))}
+        </div>
+      </motion.div>
   );
 }
 
@@ -209,28 +209,28 @@ function Projects({ lang }) {
   ];
 
   return (
-    <motion.div
-      className="page"
-      initial="initial"
-      animate="in"
-      exit="out"
-      variants={pageVariants}
-      transition={pageTransition}
-      style={{ direction: lang === "he" ? "rtl" : "ltr" }}
-    >
-      <h1>{titles[lang].main}</h1>
-      <div className="projects-grid">
-        {projects.map((p, i) => (
-          <motion.div key={i} className="project-card" style={accentStyle(i)} whileHover={{ scale: 1.05 }}>
-            <h3>{p.name}</h3>
-            <p>{p.desc[lang]}</p>
-            <a href={p.link} target="_blank" rel="noreferrer" className="project-btn">
-              {titles[lang].btn}
-            </a>
-          </motion.div>
-        ))}
-      </div>
-    </motion.div>
+      <motion.div
+          className="page"
+          initial="initial"
+          animate="in"
+          exit="out"
+          variants={pageVariants}
+          transition={pageTransition}
+          style={{ direction: lang === "he" ? "rtl" : "ltr" }}
+      >
+        <h1>{titles[lang].main}</h1>
+        <div className="projects-grid">
+          {projects.map((p, i) => (
+              <motion.div key={i} className="project-card" style={accentStyle(i)} whileHover={{ scale: 1.05 }}>
+                <h3>{p.name}</h3>
+                <p>{p.desc[lang]}</p>
+                <a href={p.link} target="_blank" rel="noreferrer" className="project-btn">
+                  {titles[lang].btn}
+                </a>
+              </motion.div>
+          ))}
+        </div>
+      </motion.div>
   );
 }
 
@@ -242,22 +242,22 @@ function Contact({ lang }) {
   };
 
   return (
-    <motion.div
-      className="page"
-      initial="initial"
-      animate="in"
-      exit="out"
-      variants={pageVariants}
-      transition={pageTransition}
-      style={{ direction: lang === "he" ? "rtl" : "ltr" }}
-    >
-      <h1>{title[lang]}</h1>
-      <div className="contact-grid">
-        <a href="mailto:mohamed2002ahibli@gmail.com" className="contact-card" style={accentStyle(0)}>📧 Email</a>
-        <a href="https://wa.me/972532427351" target="_blank" rel="noreferrer" className="contact-card" style={accentStyle(1)}>💬 WhatsApp</a>
-        <a href="https://github.com/MOHOHAMED02" target="_blank" rel="noreferrer" className="contact-card" style={accentStyle(2)}>🐙 GitHub</a>
-      </div>
-    </motion.div>
+      <motion.div
+          className="page"
+          initial="initial"
+          animate="in"
+          exit="out"
+          variants={pageVariants}
+          transition={pageTransition}
+          style={{ direction: lang === "he" ? "rtl" : "ltr" }}
+      >
+        <h1>{title[lang]}</h1>
+        <div className="contact-grid">
+          <a href="mailto:mohamed2002ahibli@gmail.com" className="contact-card" style={accentStyle(0)}>📧 Email</a>
+          <a href="https://wa.me/972532427351" target="_blank" rel="noreferrer" className="contact-card" style={accentStyle(1)}>💬 WhatsApp</a>
+          <a href="https://github.com/MOHOHAMED02" target="_blank" rel="noreferrer" className="contact-card" style={accentStyle(2)}>🐙 GitHub</a>
+        </div>
+      </motion.div>
   );
 }
 
@@ -275,28 +275,42 @@ function BottomButtons({ lang }) {
   };
 
   return (
-    <div className="bottom-buttons" style={{ direction: "ltr" }}>
-      {index > 0 && (
-        <button onClick={() => navigate(pages[index - 1])}>
-          {labels[lang].back}
-        </button>
-      )}
+      <div className="bottom-buttons" style={{ direction: "ltr" }}>
+        {index > 0 && (
+            <button onClick={() => navigate(pages[index - 1])}>
+              {labels[lang].back}
+            </button>
+        )}
 
-      <button onClick={() => navigate("/")}>{labels[lang].home}</button>
+        <button onClick={() => navigate("/")}>{labels[lang].home}</button>
 
-      {index < pages.length - 1 && (
-        <button onClick={() => navigate(pages[index + 1])}>
-          {labels[lang].next}
-        </button>
-      )}
-    </div>
+        {index < pages.length - 1 && (
+            <button onClick={() => navigate(pages[index + 1])}>
+              {labels[lang].next}
+            </button>
+        )}
+      </div>
   );
+}
+
+/* ---------------- LUXURY PARTICLES ---------------- */
+function generateParticles(count) {
+  return Array.from({ length: count }, (_, i) => ({
+    id: i,
+    left: Math.random() * 100,
+    size: 2 + Math.random() * 4,
+    duration: 12 + Math.random() * 14,
+    delay: -Math.random() * 20,
+    drift: (Math.random() - 0.5) * 120,
+    hue: Math.random() > 0.5 ? "gold" : "violet",
+  }));
 }
 
 /* ---------------- MAIN APP COMPONENT ---------------- */
 export default function App() {
   const [lang, setLang] = useState("en");
   const location = useLocation();
+  const [particles] = useState(() => generateParticles(28));
 
   // --- עוגייה לכל משתמש שנכנס (נשמרת ל-30 יום) ---
   useEffect(() => {
@@ -316,50 +330,67 @@ export default function App() {
   };
 
   return (
-    <div>
-      <div className="animated-bg" aria-hidden="true">
-        <div className="aura"></div>
-        <span className="blob blob-1"></span>
-        <span className="blob blob-2"></span>
-        <span className="blob blob-3"></span>
-        <div className="stars"></div>
-      </div>
-
-      <nav className="nav" style={{ direction: lang === "he" ? "rtl" : "ltr" }}>
-        <h2>{siteTitle[lang]}</h2>
-        <div className="links">
-          <Link to="/">{navLinks[lang][0]} </Link>
-          <Link to="/skills">{navLinks[lang][1]}</Link>
-          <Link to="/projects">{navLinks[lang][2]}</Link>
-          <Link to="/contact">{navLinks[lang][3]}</Link>
+      <div>
+        <div className="animated-bg" aria-hidden="true">
+          <div className="aura"></div>
+          <div className="shimmer-sweep"></div>
+          <span className="blob blob-1"></span>
+          <span className="blob blob-2"></span>
+          <span className="blob blob-3"></span>
+          <div className="stars"></div>
+          <div className="particles">
+            {particles.map((p) => (
+                <span
+                    key={p.id}
+                    className={`particle particle-${p.hue}`}
+                    style={{
+                      left: `${p.left}%`,
+                      width: `${p.size}px`,
+                      height: `${p.size}px`,
+                      animationDuration: `${p.duration}s`,
+                      animationDelay: `${p.delay}s`,
+                      "--drift": `${p.drift}px`,
+                    }}
+                ></span>
+            ))}
+          </div>
         </div>
-      </nav>
 
-      <div className="lang-bar">
-        <button 
-          onClick={() => setLang("en")} 
-          className={lang === "en" ? "active" : ""}
-        >
-          English
-        </button>
-        <button 
-          onClick={() => setLang("he")} 
-          className={lang === "he" ? "active" : ""}
-        >
-          Hebrew
-        </button>
+        <nav className="nav" style={{ direction: lang === "he" ? "rtl" : "ltr" }}>
+          <h2>{siteTitle[lang]}</h2>
+          <div className="links">
+            <Link to="/">{navLinks[lang][0]} </Link>
+            <Link to="/skills">{navLinks[lang][1]}</Link>
+            <Link to="/projects">{navLinks[lang][2]}</Link>
+            <Link to="/contact">{navLinks[lang][3]}</Link>
+          </div>
+        </nav>
+
+        <div className="lang-bar">
+          <button
+              onClick={() => setLang("en")}
+              className={lang === "en" ? "active" : ""}
+          >
+            English
+          </button>
+          <button
+              onClick={() => setLang("he")}
+              className={lang === "he" ? "active" : ""}
+          >
+            Hebrew
+          </button>
+        </div>
+
+        <AnimatePresence mode="wait">
+          <Routes location={location} key={location.pathname}>
+            <Route path="/" element={<About lang={lang} />} />
+            <Route path="/skills" element={<Skills lang={lang} />} />
+            <Route path="/projects" element={<Projects lang={lang} />} />
+            <Route path="/contact" element={<Contact lang={lang} />} />
+          </Routes>
+        </AnimatePresence>
+
+        <BottomButtons lang={lang} />
       </div>
-
-      <AnimatePresence mode="wait">
-        <Routes location={location} key={location.pathname}>
-          <Route path="/" element={<About lang={lang} />} />
-          <Route path="/skills" element={<Skills lang={lang} />} />
-          <Route path="/projects" element={<Projects lang={lang} />} />
-          <Route path="/contact" element={<Contact lang={lang} />} />
-        </Routes>
-      </AnimatePresence>
-
-      <BottomButtons lang={lang} />
-    </div>
   );
 }
