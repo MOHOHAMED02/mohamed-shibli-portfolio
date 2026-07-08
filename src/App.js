@@ -21,30 +21,53 @@ const pageTransition = {
   duration: 0.4,
 };
 
+/* ---------------- SHARED ACCENT PALETTE (each card gets its own color) ---------------- */
+const ACCENTS = [
+  { solid: "#2563eb", glow: "rgba(37, 99, 235, 0.35)" },   // sapphire
+  { solid: "#10b981", glow: "rgba(16, 185, 129, 0.35)" },  // emerald
+  { solid: "#f59e0b", glow: "rgba(245, 158, 11, 0.35)" },  // amber
+  { solid: "#e11d48", glow: "rgba(225, 29, 72, 0.35)" },   // ruby
+  { solid: "#8b5cf6", glow: "rgba(139, 92, 246, 0.35)" },  // violet
+  { solid: "#06b6d4", glow: "rgba(6, 182, 212, 0.35)" },   // cyan
+  { solid: "#f472b6", glow: "rgba(244, 114, 182, 0.35)" }, // pink
+  { solid: "#84cc16", glow: "rgba(132, 204, 22, 0.35)" },  // lime
+  { solid: "#f97316", glow: "rgba(249, 115, 22, 0.35)" },  // orange
+  { solid: "#14b8a6", glow: "rgba(20, 184, 166, 0.35)" },  // teal
+];
+
+function accentStyle(i) {
+  const c = ACCENTS[i % ACCENTS.length];
+  return { "--accent": c.solid, "--accent-glow": c.glow };
+}
+
 /* ---------------- 1. ABOUT ME (WITH INTRO) ---------------- */
 function About({ lang }) {
   const text = {
     en: {
       title: "👨‍💻 About Me",
       desc: `Hello everyone! My name is Mohamed Shibli.
-I am a 2nd-year Software Engineering student at Kinneret Academic College.
+I am a 3rd-year Software Engineering student at Kinneret Academic College.
 
 I am a motivated developer with a strong passion for modern technologies, system design, and full-stack development.
 
 I specialize in building responsive and scalable web applications using technologies such as React, Node.js, JavaScript, and databases.
+
+Over the years I've built strong, hands-on experience across the full stack — from clean, well-structured front-end interfaces to solid back-end logic and databases — and I take pride in writing efficient, reliable code.
 
 Currently seeking opportunities to grow as a Junior Developer and contribute to real-world projects in a professional environment.`,
     },
     he: {
       title: "👨‍💻 עליי",
       desc: `שלום לכולם! שמי מוחמד שיבלי.
-אני סטודנט להנדסת תוכנה שנה שנייה במכללת כנרת.
+אני סטודנט להנדסת תוכנה שנה שלישית במכללת כנרת.
 
 אני מפתח עם תשוקה חזקה לטכנולוגיה, פיתוח מערכות ותכנות מודרני.
 
 מתמקד בפיתוח אפליקציות ווב מלאות (Full Stack) עם React, Node.js, JavaScript ובסיסי נתונים.
 
 אוהב לפתור בעיות מורכבות, לכתוב קוד נקי ויעיל, וללמוד טכנולוגיות חדשות כל הזמן.
+
+עם השנים צברתי ניסיון מעשי חזק בכל שכבות הפיתוח - Full Stack אמיתי - החל מממשקי משתמש מסודרים וברורים ועד לוגיקת שרת ובסיסי נתונים איתנים, ואני גאה בכתיבת קוד יעיל ואמין.
 
 מחפש הזדמנויות להתפתח כמפתח ג'וניור ולהשתלב בצוות פיתוח מקצועי בפרויקטים אמיתיים.`,
     },
@@ -107,24 +130,11 @@ function Skills({ lang }) {
           <motion.div
             key={i}
             className="skill-card"
+            style={accentStyle(i)}
             whileHover={{ scale: 1.05 }}
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.4, delay: i * 0.05 }}
           >
             <div className="icon">{s.icon}</div>
             <div className="skill-name">{s.name}</div>
-            <div className="skill-bar-track">
-              <motion.div
-                className="skill-bar-fill"
-                initial={{ width: 0 }}
-                whileInView={{ width: `${s.level}%` }}
-                viewport={{ once: true }}
-                transition={{ duration: 1, delay: i * 0.05 + 0.2, ease: "easeOut" }}
-              />
-            </div>
-            <div className="skill-percent">{s.level}%</div>
           </motion.div>
         ))}
       </div>
@@ -141,7 +151,7 @@ function Projects({ lang }) {
 
   const projects = [
     {
-      name: "SIMON GAME ARDUINO",
+      name: "🎮 SIMON GAME ARDUINO",
       desc: {
         en: "Arduino-based Simon Says game with LEDs and logic control.",
         he: "משחק סימון מבוסס ארדואינו עם נורות LED ובקרת לוגיקה.",
@@ -149,7 +159,7 @@ function Projects({ lang }) {
       link: "https://github.com/MOHOHAMED02/SIMON-GAME-ARDUINO",
     },
     {
-      name: "Flying Square Game",
+      name: "🕹️ Flying Square Game",
       desc: {
         en: "JavaScript game with movement & collision mechanics.",
         he: "משחק JavaScript עם מכניקת תנועה והתנגשויות.",
@@ -157,7 +167,7 @@ function Projects({ lang }) {
       link: "https://github.com/MOHOHAMED02/flying-square",
     },
     {
-      name: "Memory Game",
+      name: "🧠 Memory Game",
       desc: {
         en: "Classic memory card game built with JavaScript.",
         he: "משחק זיכרון קלאסי שנבנה עם JavaScript.",
@@ -165,7 +175,7 @@ function Projects({ lang }) {
       link: "https://github.com/MOHOHAMED02/memory-game",
     },
     {
-      name: "Todo List App",
+      name: "✅ Todo List App",
       desc: {
         en: "Task manager with add, delete and complete features.",
         he: "אפליקציית ניהול משימות עם אפשרות הוספה, מחיקה וסימון לביצוע.",
@@ -173,7 +183,7 @@ function Projects({ lang }) {
       link: "https://github.com/MOHOHAMED02/finish-todo-list",
     },
     {
-      name: "Project Rating System",
+      name: "⭐ Project Rating System",
       desc: {
         en: "System for rating and managing projects.",
         he: "מערכת לניהול ודירוג פרויקטים.",
@@ -181,7 +191,7 @@ function Projects({ lang }) {
       link: "https://github.com/MOHOHAMED02/project_rating_system",
     },
     {
-      name: "Escape Room IoT",
+      name: "🔐 Escape Room IoT",
       desc: {
         en: "IoT based escape room project using Arduino and smart logic systems.",
         he: "פרויקט חדר בריחה מבוסס IoT עם ארדואינו ולוגיקה חכמה.",
@@ -189,7 +199,7 @@ function Projects({ lang }) {
       link: "https://github.com/MOHOHAMED02/escape-room-iot",
     },
     {
-      name: "React User Cards Editor",
+      name: "🪪 React User Cards Editor",
       desc: {
         en: "An array of 6 user objects (name, ID, address, image) displayed as clickable cards. Clicking a card opens a shared edit panel with labeled inputs (ID stays read-only) and a save button that updates the card's data.",
         he: "מערך של 6 אובייקטים (שם, ת.ז, כתובת, תמונה) המוצגים ככרטיסיות לחיצות. לחיצה על כרטיסייה פותחת מקטע עריכה משותף עם אינפוטים מתויגים (שדה ת.ז קבוע) וכפתור שמירה שמעדכן את פרטי הכרטיסייה.",
@@ -211,7 +221,7 @@ function Projects({ lang }) {
       <h1>{titles[lang].main}</h1>
       <div className="projects-grid">
         {projects.map((p, i) => (
-          <motion.div key={i} className="project-card" whileHover={{ scale: 1.05 }}>
+          <motion.div key={i} className="project-card" style={accentStyle(i)} whileHover={{ scale: 1.05 }}>
             <h3>{p.name}</h3>
             <p>{p.desc[lang]}</p>
             <a href={p.link} target="_blank" rel="noreferrer" className="project-btn">
@@ -243,8 +253,9 @@ function Contact({ lang }) {
     >
       <h1>{title[lang]}</h1>
       <div className="contact-grid">
-        <a href="mailto:mohamed2002ahibli@gmail.com" className="contact-card">📧 Email</a>
-        <a href="https://wa.me/972532427351" target="_blank" rel="noreferrer" className="contact-card">💬 WhatsApp</a>
+        <a href="mailto:mohamed2002ahibli@gmail.com" className="contact-card" style={accentStyle(0)}>📧 Email</a>
+        <a href="https://wa.me/972532427351" target="_blank" rel="noreferrer" className="contact-card" style={accentStyle(1)}>💬 WhatsApp</a>
+        <a href="https://github.com/MOHOHAMED02" target="_blank" rel="noreferrer" className="contact-card" style={accentStyle(2)}>🐙 GitHub</a>
       </div>
     </motion.div>
   );
@@ -264,7 +275,7 @@ function BottomButtons({ lang }) {
   };
 
   return (
-    <div className="bottom-buttons" style={{ direction: lang === "he" ? "rtl" : "ltr" }}>
+    <div className="bottom-buttons" style={{ direction: "ltr" }}>
       {index > 0 && (
         <button onClick={() => navigate(pages[index - 1])}>
           {labels[lang].back}
@@ -299,9 +310,15 @@ export default function App() {
     he: ["עליי", "שפות תוכנה", "פרוייקטים ", "צור קשר"],
   };
 
+  const siteTitle = {
+    en: "Mohamed Shibli Portfolio 🚀",
+    he: "התיק של מוחמד שיבלי 🚀",
+  };
+
   return (
     <div>
       <div className="animated-bg" aria-hidden="true">
+        <div className="aura"></div>
         <span className="blob blob-1"></span>
         <span className="blob blob-2"></span>
         <span className="blob blob-3"></span>
@@ -309,7 +326,7 @@ export default function App() {
       </div>
 
       <nav className="nav" style={{ direction: lang === "he" ? "rtl" : "ltr" }}>
-        <h2>Mohamed Shibli Portfolio 🚀</h2>
+        <h2>{siteTitle[lang]}</h2>
         <div className="links">
           <Link to="/">{navLinks[lang][0]} </Link>
           <Link to="/skills">{navLinks[lang][1]}</Link>
