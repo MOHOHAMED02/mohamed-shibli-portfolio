@@ -112,6 +112,7 @@ function Skills({ lang }) {
     { name: "QA Testing", icon: "🧪", level: 70 },
     { name: "OOP", icon: "🧩", level: 80 },
     { name: "Arduino", icon: "🔌", level: 75 },
+    { name: "MongoDB", icon: "🍃", level: 70 },
   ];
 
   return (
@@ -205,6 +206,14 @@ function Projects({ lang }) {
         he: "מערך של 6 אובייקטים (שם, ת.ז, כתובת, תמונה) המוצגים ככרטיסיות לחיצות. לחיצה על כרטיסייה פותחת מקטע עריכה משותף עם אינפוטים מתויגים (שדה ת.ז קבוע) וכפתור שמירה שמעדכן את פרטי הכרטיסייה.",
       },
       link: "https://github.com/MOHOHAMED02/react-user-cards-editor",
+    },
+    {
+      name: "🚨 Smart Panic Button IoT",
+      desc: {
+        en: "Real-time smart panic-button system built around an interrupt-driven physical button and a clear state machine (routine / panic / reset). Pressing it triggers a fast-blinking red LED and a rising-falling buzzer, streams live JSON status (device ID + state) over MQTT/WebSocket, and the alert can only be cleared from a live web dashboard.",
+        he: "מערכת לחצן מצוקה חכמה בזמן אמת, מבוססת על לחצן פיזי עם Interrupt ומכונת מצבים ברורה (שגרה / מצוקה / איפוס). לחיצה מפעילה LED אדום מהבהב מהר וזמזום עולה-יורד, שולחת סטטוס JSON חי (מזהה מכשיר + מצב) דרך MQTT/WebSocket, וניתן לבטל את ההתראה רק דרך דף אינטרנט חי.",
+      },
+      link: "https://github.com/MOHOHAMED02/smart-panic-button-iot-pro",
     },
   ];
 
