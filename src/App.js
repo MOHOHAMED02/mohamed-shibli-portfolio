@@ -1,405 +1,518 @@
-import { useState, useEffect } from "react";
-import {
-  Routes,
-  Route,
-  Link,
-  useNavigate,
-  useLocation,
-} from "react-router-dom";
-import { AnimatePresence, motion } from "framer-motion";
-import Cookies from 'js-cookie'; // ייבוא של העוגיות
+import { useState, useEffect, useRef } from "react";
+import Cookies from "js-cookie"; // ייבוא של העוגיות
 import "./App.css";
 
-/* ---------------- ANIMATION SETTINGS ---------------- */
-const pageVariants = {
-  initial: { opacity: 0, y: 30 },
-  in: { opacity: 1, y: 0 },
-  out: { opacity: 0, y: -30 },
-};
-
-const pageTransition = {
-  duration: 0.4,
-};
-
-/* ---------------- SHARED ACCENT PALETTE (each card gets its own color) ---------------- */
+/* ---------------- PER-CARD ACCENT COLORS ---------------- */
 const ACCENTS = [
-  { solid: "#2563eb", glow: "rgba(37, 99, 235, 0.35)" },   // sapphire
-  { solid: "#10b981", glow: "rgba(16, 185, 129, 0.35)" },  // emerald
-  { solid: "#f59e0b", glow: "rgba(245, 158, 11, 0.35)" },  // amber
-  { solid: "#e11d48", glow: "rgba(225, 29, 72, 0.35)" },   // ruby
-  { solid: "#8b5cf6", glow: "rgba(139, 92, 246, 0.35)" },  // violet
-  { solid: "#06b6d4", glow: "rgba(6, 182, 212, 0.35)" },   // cyan
-  { solid: "#f472b6", glow: "rgba(244, 114, 182, 0.35)" }, // pink
-  { solid: "#84cc16", glow: "rgba(132, 204, 22, 0.35)" },  // lime
-  { solid: "#f97316", glow: "rgba(249, 115, 22, 0.35)" },  // orange
-  { solid: "#14b8a6", glow: "rgba(20, 184, 166, 0.35)" },  // teal
+  { solid: "#3b82f6", glow: "rgba(59, 130, 246, 0.4)" },
+  { solid: "#10b981", glow: "rgba(16, 185, 129, 0.4)" },
+  { solid: "#f59e0b", glow: "rgba(245, 158, 11, 0.4)" },
+  { solid: "#e11d48", glow: "rgba(225, 29, 72, 0.4)" },
+  { solid: "#8b5cf6", glow: "rgba(139, 92, 246, 0.4)" },
+  { solid: "#06b6d4", glow: "rgba(6, 182, 212, 0.4)" },
+  { solid: "#84cc16", glow: "rgba(132, 204, 22, 0.4)" },
+  { solid: "#f97316", glow: "rgba(249, 115, 22, 0.4)" },
+  { solid: "#ec4899", glow: "rgba(236, 72, 153, 0.4)" },
+  { solid: "#14b8a6", glow: "rgba(20, 184, 166, 0.4)" },
 ];
 
+// لون مختلف لكل مربع: بنخلط الترتيب شوي عشان ما يتكرر اللون بجنب بعضو
 function accentStyle(i) {
-  const c = ACCENTS[i % ACCENTS.length];
+  const c = ACCENTS[(i * 3) % ACCENTS.length];
   return { "--accent": c.solid, "--accent-glow": c.glow };
 }
 
-/* ---------------- 1. ABOUT ME (WITH INTRO) ---------------- */
-function About({ lang }) {
-  const text = {
-    en: {
-      title: "👨‍💻 About Me",
-      desc: `Hello everyone! My name is Mohamed Shibli.
+/* ---------------- SPLASH SCREEN (opening intro) ---------------- */
+function Splash({ onDone }) {
+  const [leaving, setLeaving] = useState(false);
+  const letters = "MOHAMED SHIBLI".split("");
+
+  useEffect(() => {
+    document.body.style.overflow = "hidden";
+    const t1 = setTimeout(() => setLeaving(true), 2900);
+    const t2 = setTimeout(() => {
+      document.body.style.overflow = "";
+      onDone();
+    }, 3500);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      document.body.style.overflow = "";
+    };
+  }, [onDone]);
+
+  return (
+    <div
+      className={`splash ${leaving ? "leaving" : ""}`}
+      style={{ direction: "ltr" }}
+      onClick={() => setLeaving(true)}
+    >
+      <div className="splash-glow"></div>
+      <div className="splash-name">
+        {letters.map((ch, i) => (
+          <span
+            key={i}
+            className={ch === " " ? "splash-letter space" : "splash-letter"}
+            style={{ animationDelay: `${0.25 + i * 0.1}s` }}
+          >
+            {ch === " " ? " " : ch}
+          </span>
+        ))}
+      </div>
+      <div className="splash-line"></div>
+      <div className="splash-sub">FULL-STACK DEVELOPER</div>
+    </div>
+  );
+}
+
+/* ---------------- LIGHTWEIGHT SCROLL REVEAL (no heavy library) ---------------- */
+function Reveal({ tag: Tag = "div", className = "", children, ...rest }) {
+  const ref = useRef(null);
+  const [shown, setShown] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return undefined;
+    if (!("IntersectionObserver" in window)) {
+      setShown(true);
+      return undefined;
+    }
+    const obs = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setShown(true);
+          obs.disconnect();
+        }
+      },
+      { threshold: 0.1 }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+
+  return (
+    <Tag ref={ref} className={`reveal ${shown ? "in" : ""} ${className}`} {...rest}>
+      {children}
+    </Tag>
+  );
+}
+
+const SECTIONS = ["about", "skills", "projects", "contact"];
+
+/* ---------------- TEXT CONTENT ---------------- */
+const ABOUT = {
+  en: {
+    title: "👨‍💻 About Me",
+    badge: "Open to Junior Developer roles",
+    name: "Mohamed Shibli",
+    role: "Software Engineering Student · Full-Stack Developer",
+    cta1: "View Projects",
+    cta2: "Contact Me",
+    desc: `Hello everyone! My name is Mohamed Shibli.
 I am a 3rd-year Software Engineering student at Kinneret Academic College.
 
 I am a motivated developer with a strong passion for modern technologies, system design, and full-stack development.
 
 I specialize in building responsive and scalable web applications using technologies such as React, Node.js, JavaScript, and databases.
 
+I also build professional websites for businesses — online booking systems for appointments and reservations, e-commerce stores for selling products, landing pages and custom web apps — as well as applications. Every project is designed to look premium, load fast and help the business grow.
+
 Over the years I've built strong, hands-on experience across the full stack — from clean, well-structured front-end interfaces to solid back-end logic and databases — and I take pride in writing efficient, reliable code.
 
 Currently seeking opportunities to grow as a Junior Developer and contribute to real-world projects in a professional environment.`,
-    },
-    he: {
-      title: "👨‍💻 עליי",
-      desc: `שלום לכולם! שמי מוחמד שיבלי.
+  },
+  he: {
+    title: "👨‍💻 עליי",
+    badge: "פתוח להזדמנויות כמפתח ג'וניור",
+    name: "מוחמד שיבלי",
+    role: "סטודנט להנדסת תוכנה · מפתח Full Stack",
+    cta1: "לפרויקטים",
+    cta2: "צור קשר",
+    desc: `שלום לכולם! שמי מוחמד שיבלי.
 אני סטודנט להנדסת תוכנה שנה שלישית במכללת כנרת.
 
 אני מפתח עם תשוקה חזקה לטכנולוגיה, פיתוח מערכות ותכנות מודרני.
 
 מתמקד בפיתוח אפליקציות ווב מלאות (Full Stack) עם React, Node.js, JavaScript ובסיסי נתונים.
 
-אוהב לפתור בעיות מורכבות, לכתוב קוד נקי ויעיל, וללמוד טכנולוגיות חדשות כל הזמן.
+אני בונה גם אתרים מקצועיים לעסקים - מערכות הזמנת תורים והזמנות, חנויות אונליין למכירת מוצרים, דפי נחיתה ואתרים מותאמים אישית - וגם אפליקציות. כל פרויקט מעוצב ברמה גבוהה, נטען מהר ועוזר לעסק לצמוח.
 
 עם השנים צברתי ניסיון מעשי חזק בכל שכבות הפיתוח - Full Stack אמיתי - החל מממשקי משתמש מסודרים וברורים ועד לוגיקת שרת ובסיסי נתונים איתנים, ואני גאה בכתיבת קוד יעיל ואמין.
 
 מחפש הזדמנויות להתפתח כמפתח ג'וניור ולהשתלב בצוות פיתוח מקצועי בפרויקטים אמיתיים.`,
+  },
+};
+
+const BUILD_TITLE = { en: "What I Build", he: "מה אני בונה" };
+
+const BUILD = [
+  {
+    icon: "📅",
+    title: { en: "Booking Systems", he: "מערכות הזמנת תורים" },
+    desc: {
+      en: "Appointment & reservation systems for salons, clinics and restaurants.",
+      he: "מערכות לתיאום תורים והזמנות לעסקים, מספרות, מרפאות ומסעדות.",
     },
-  };
-
-  return (
-      <motion.div
-          className="page"
-          initial="initial"
-          animate="in"
-          exit="out"
-          variants={pageVariants}
-          transition={pageTransition}
-          style={{ direction: lang === "he" ? "rtl" : "ltr" }}
-      >
-        <h1>{text[lang].title}</h1>
-        <p style={{ whiteSpace: "pre-line", fontSize: "1.1rem", lineHeight: "1.6" }}>
-          {text[lang].desc}
-        </p>
-      </motion.div>
-  );
-}
-
-/* ---------------- 2. ENGINEERING STACK ---------------- */
-function Skills({ lang }) {
-  const title = {
-    en: "🚀 Programs",
-    he: "🚀 שפות תכנות שלמדתי",
-  };
-
-  const skills = [
-    { name: "C", icon: "🧠", level: 75 },
-    { name: "HTML", icon: "🌐", level: 90 },
-    { name: "CSS", icon: "🎨", level: 85 },
-    { name: "JavaScript", icon: "⚡", level: 85 },
-    { name: "React", icon: "⚛️", level: 85 },
-    { name: "Node.js", icon: "🟢", level: 70 },
-    { name: "C++", icon: "🔧", level: 70 },
-    { name: "C#", icon: "💻", level: 65 },
-    { name: "PHP", icon: "🐘", level: 60 },
-    { name: "SQL", icon: "🗄️", level: 75 },
-    { name: "QA Testing", icon: "🧪", level: 70 },
-    { name: "OOP", icon: "🧩", level: 80 },
-    { name: "Arduino", icon: "🔌", level: 75 },
-    { name: "MongoDB", icon: "🍃", level: 70 },
-  ];
-
-  return (
-      <motion.div
-          className="page"
-          initial="initial"
-          animate="in"
-          exit="out"
-          variants={pageVariants}
-          transition={pageTransition}
-          style={{ direction: lang === "he" ? "rtl" : "ltr" }}
-      >
-        <h1>{title[lang]}</h1>
-        <div className="skills-grid">
-          {skills.map((s, i) => (
-              <motion.div
-                  key={i}
-                  className="skill-card"
-                  style={accentStyle(i)}
-                  whileHover={{ scale: 1.05 }}
-              >
-                <div className="icon">{s.icon}</div>
-                <div className="skill-name">{s.name}</div>
-              </motion.div>
-          ))}
-        </div>
-      </motion.div>
-  );
-}
-
-/* ---------------- 3. PORTFOLIO SHOWCASE ---------------- */
-function Projects({ lang }) {
-  const titles = {
-    en: { main: "💼 My Projects", btn: "🔗 View Project" },
-    he: { main: "💼 פרוייקטים שלי", btn: "🔗 צפה בפרויקט" },
-  };
-
-  const projects = [
-    {
-      name: "🎮 SIMON GAME ARDUINO",
-      desc: {
-        en: "Arduino-based Simon Says game with LEDs and logic control.",
-        he: "משחק סימון מבוסס ארדואינו עם נורות LED ובקרת לוגיקה.",
-      },
-      link: "https://github.com/MOHOHAMED02/SIMON-GAME-ARDUINO",
+  },
+  {
+    icon: "🛒",
+    title: { en: "Online Stores", he: "חנויות אונליין" },
+    desc: {
+      en: "E-commerce websites to sell products, with cart and checkout.",
+      he: "אתרי איקומרס למכירת מוצרים, עם עגלת קניות ותשלום.",
     },
-    {
-      name: "🕹️ Flying Square Game",
-      desc: {
-        en: "JavaScript game with movement & collision mechanics.",
-        he: "משחק JavaScript עם מכניקת תנועה והתנגשויות.",
-      },
-      link: "https://github.com/MOHOHAMED02/flying-square",
+  },
+  {
+    icon: "📱",
+    title: { en: "Apps & Web Apps", he: "אפליקציות ואתרים" },
+    desc: {
+      en: "Custom applications and business websites built to your needs.",
+      he: "אפליקציות ואתרים לעסקים, מותאמים אישית לצרכים שלך.",
     },
-    {
-      name: "🧠 Memory Game",
-      desc: {
-        en: "Classic memory card game built with JavaScript.",
-        he: "משחק זיכרון קלאסי שנבנה עם JavaScript.",
-      },
-      link: "https://github.com/MOHOHAMED02/memory-game",
+  },
+];
+
+const SKILLS_TITLE = {
+  en: "🚀 Skills & Technologies",
+  he: "🚀 כישורים וטכנולוגיות",
+};
+
+const SKILLS = [
+  { name: "C", icon: "🧠" },
+  { name: "HTML", icon: "🌐" },
+  { name: "CSS", icon: "🎨" },
+  { name: "JavaScript", icon: "⚡" },
+  { name: "React", icon: "⚛️" },
+  { name: "Node.js", icon: "🟢" },
+  { name: "C++", icon: "🔧" },
+  { name: "C#", icon: "💻" },
+  { name: "PHP", icon: "🐘" },
+  { name: "SQL", icon: "🗄️" },
+  { name: "MongoDB", icon: "🍃" },
+  { name: "QA Testing", icon: "🧪" },
+  { name: "OOP", icon: "🧩" },
+  { name: "Arduino", icon: "🔌" },
+  { name: "Linux", icon: "🐧" },
+  { name: "Operating Systems", he: "מערכות הפעלה", icon: "🖥️" },
+  { name: "Networking", he: "תקשורת ורשתות", icon: "📡" },
+];
+
+const PROJECTS_TITLES = {
+  en: { main: "💼 My Projects", btn: "🔗 View Project" },
+  he: { main: "💼 פרוייקטים שלי", btn: "🔗 צפה בפרויקט" },
+};
+
+const PROJECTS = [
+  {
+    name: "🎮 SIMON GAME ARDUINO",
+    desc: {
+      en: "Arduino-based Simon Says game with LEDs and logic control.",
+      he: "משחק סימון מבוסס ארדואינו עם נורות LED ובקרת לוגיקה.",
     },
-    {
-      name: "✅ Todo List App",
-      desc: {
-        en: "Task manager with add, delete and complete features.",
-        he: "אפליקציית ניהול משימות עם אפשרות הוספה, מחיקה וסימון לביצוע.",
-      },
-      link: "https://github.com/MOHOHAMED02/finish-todo-list",
+    link: "https://github.com/MOHOHAMED02/SIMON-GAME-ARDUINO",
+  },
+  {
+    name: "🕹️ Flying Square Game",
+    desc: {
+      en: "JavaScript game with movement & collision mechanics.",
+      he: "משחק JavaScript עם מכניקת תנועה והתנגשויות.",
     },
-    {
-      name: "⭐ Project Rating System",
-      desc: {
-        en: "System for rating and managing projects.",
-        he: "מערכת לניהול ודירוג פרויקטים.",
-      },
-      link: "https://github.com/MOHOHAMED02/project_rating_system",
+    link: "https://github.com/MOHOHAMED02/flying-square",
+  },
+  {
+    name: "🧠 Memory Game",
+    desc: {
+      en: "Classic memory card game built with JavaScript.",
+      he: "משחק זיכרון קלאסי שנבנה עם JavaScript.",
     },
-    {
-      name: "🔐 Escape Room IoT",
-      desc: {
-        en: "IoT based escape room project using Arduino and smart logic systems.",
-        he: "פרויקט חדר בריחה מבוסס IoT עם ארדואינו ולוגיקה חכמה.",
-      },
-      link: "https://github.com/MOHOHAMED02/escape-room-iot",
+    link: "https://github.com/MOHOHAMED02/memory-game",
+  },
+  {
+    name: "✅ Todo List App",
+    desc: {
+      en: "Task manager with add, delete and complete features.",
+      he: "אפליקציית ניהול משימות עם אפשרות הוספה, מחיקה וסימון לביצוע.",
     },
-    {
-      name: "🪪 React User Cards Editor",
-      desc: {
-        en: "An array of 6 user objects (name, ID, address, image) displayed as clickable cards. Clicking a card opens a shared edit panel with labeled inputs (ID stays read-only) and a save button that updates the card's data.",
-        he: "מערך של 6 אובייקטים (שם, ת.ז, כתובת, תמונה) המוצגים ככרטיסיות לחיצות. לחיצה על כרטיסייה פותחת מקטע עריכה משותף עם אינפוטים מתויגים (שדה ת.ז קבוע) וכפתור שמירה שמעדכן את פרטי הכרטיסייה.",
-      },
-      link: "https://github.com/MOHOHAMED02/react-user-cards-editor",
+    link: "https://github.com/MOHOHAMED02/finish-todo-list",
+  },
+  {
+    name: "⭐ Project Rating System",
+    desc: {
+      en: "System for rating and managing projects.",
+      he: "מערכת לניהול ודירוג פרויקטים.",
     },
-    {
-      name: "🚨 Smart Panic Button IoT",
-      desc: {
-        en: "Real-time smart panic-button system built around an interrupt-driven physical button and a clear state machine (routine / panic / reset). Pressing it triggers a fast-blinking red LED and a rising-falling buzzer, streams live JSON status (device ID + state) over MQTT/WebSocket, and the alert can only be cleared from a live web dashboard.",
-        he: "מערכת לחצן מצוקה חכמה בזמן אמת, מבוססת על לחצן פיזי עם Interrupt ומכונת מצבים ברורה (שגרה / מצוקה / איפוס). לחיצה מפעילה LED אדום מהבהב מהר וזמזום עולה-יורד, שולחת סטטוס JSON חי (מזהה מכשיר + מצב) דרך MQTT/WebSocket, וניתן לבטל את ההתראה רק דרך דף אינטרנט חי.",
-      },
-      link: "https://github.com/MOHOHAMED02/smart-panic-button-iot-pro",
+    link: "https://github.com/MOHOHAMED02/project_rating_system",
+  },
+  {
+    name: "🔐 Escape Room IoT",
+    desc: {
+      en: "IoT based escape room project using Arduino and smart logic systems.",
+      he: "פרויקט חדר בריחה מבוסס IoT עם ארדואינו ולוגיקה חכמה.",
     },
-  ];
+    link: "https://github.com/MOHOHAMED02/escape-room-iot",
+  },
+  {
+    name: "🪪 React User Cards Editor",
+    desc: {
+      en: "An array of 6 user objects (name, ID, address, image) displayed as clickable cards. Clicking a card opens a shared edit panel with labeled inputs (ID stays read-only) and a save button that updates the card's data.",
+      he: "מערך של 6 אובייקטים (שם, ת.ז, כתובת, תמונה) המוצגים ככרטיסיות לחיצות. לחיצה על כרטיסייה פותחת מקטע עריכה משותף עם אינפוטים מתויגים (שדה ת.ז קבוע) וכפתור שמירה שמעדכן את פרטי הכרטיסייה.",
+    },
+    link: "https://github.com/MOHOHAMED02/react-user-cards-editor",
+  },
+  {
+    name: "🚨 Smart Panic Button IoT",
+    desc: {
+      en: "Real-time smart panic-button system built around an interrupt-driven physical button and a clear state machine (routine / panic / reset). Pressing it triggers a fast-blinking red LED and a rising-falling buzzer, streams live JSON status (device ID + state) over MQTT/WebSocket, and the alert can only be cleared from a live web dashboard.",
+      he: "מערכת לחצן מצוקה חכמה בזמן אמת, מבוססת על לחצן פיזי עם Interrupt ומכונת מצבים ברורה (שגרה / מצוקה / איפוס). לחיצה מפעילה LED אדום מהבהב מהר וזמזום עולה-יורד, שולחת סטטוס JSON חי (מזהה מכשיר + מצב) דרך MQTT/WebSocket, וניתן לבטל את ההתראה רק דרך דף אינטרנט חי.",
+    },
+    link: "https://github.com/MOHOHAMED02/smart-panic-button-iot-pro",
+  },
+];
 
-  return (
-      <motion.div
-          className="page"
-          initial="initial"
-          animate="in"
-          exit="out"
-          variants={pageVariants}
-          transition={pageTransition}
-          style={{ direction: lang === "he" ? "rtl" : "ltr" }}
-      >
-        <h1>{titles[lang].main}</h1>
-        <div className="projects-grid">
-          {projects.map((p, i) => (
-              <motion.div key={i} className="project-card" style={accentStyle(i)} whileHover={{ scale: 1.05 }}>
-                <h3>{p.name}</h3>
-                <p>{p.desc[lang]}</p>
-                <a href={p.link} target="_blank" rel="noreferrer" className="project-btn">
-                  {titles[lang].btn}
-                </a>
-              </motion.div>
-          ))}
-        </div>
-      </motion.div>
-  );
-}
+const CONTACT_TITLE = {
+  en: "📞 Contact & Collaboration",
+  he: "📞 צור קשר ושיתוף פעולה",
+};
 
-/* ---------------- 4. CONTACT & COLLABORATION ---------------- */
-function Contact({ lang }) {
-  const title = {
-    en: "📞 Contact & Collaboration",
-    he: "📞 צור קשר ושיתוף פעולה",
-  };
+const NAV_LINKS = {
+  en: ["About Me", "Skills", "Projects", "Contact"],
+  he: ["עליי", "כישורים", "פרוייקטים", "צור קשר"],
+};
 
-  return (
-      <motion.div
-          className="page"
-          initial="initial"
-          animate="in"
-          exit="out"
-          variants={pageVariants}
-          transition={pageTransition}
-          style={{ direction: lang === "he" ? "rtl" : "ltr" }}
-      >
-        <h1>{title[lang]}</h1>
-        <div className="contact-grid">
-          <a href="mailto:mohamed2002ahibli@gmail.com" className="contact-card" style={accentStyle(0)}>📧 Email</a>
-          <a href="https://wa.me/972532427351" target="_blank" rel="noreferrer" className="contact-card" style={accentStyle(1)}>💬 WhatsApp</a>
-          <a href="https://github.com/MOHOHAMED02" target="_blank" rel="noreferrer" className="contact-card" style={accentStyle(2)}>🐙 GitHub</a>
-        </div>
-      </motion.div>
-  );
-}
+const SITE_TITLE = {
+  en: "Mohamed Shibli",
+  he: "מוחמד שיבלי",
+};
 
-/* ---------------- SMART NAV BUTTONS ---------------- */
-function BottomButtons({ lang }) {
-  const navigate = useNavigate();
-  const location = useLocation();
+const DOCK = {
+  en: { top: "Top", cats: "Categories" },
+  he: { top: "למעלה", cats: "קטגוריות" },
+};
 
-  const pages = ["/", "/skills", "/projects", "/contact"];
-  const index = pages.indexOf(location.pathname);
-
-  const labels = {
-    en: { back: "⬅ Back", home: "🏠 Home", next: "➡ Next" },
-    he: { back: "⬅ אחורה", home: "🏠 בית", next: "➡ קדימה" },
-  };
-
-  return (
-      <div className="bottom-buttons" style={{ direction: "ltr" }}>
-        {index > 0 && (
-            <button onClick={() => navigate(pages[index - 1])}>
-              {labels[lang].back}
-            </button>
-        )}
-
-        <button onClick={() => navigate("/")}>{labels[lang].home}</button>
-
-        {index < pages.length - 1 && (
-            <button onClick={() => navigate(pages[index + 1])}>
-              {labels[lang].next}
-            </button>
-        )}
-      </div>
-  );
-}
-
-/* ---------------- LUXURY PARTICLES ---------------- */
-function generateParticles(count) {
-  return Array.from({ length: count }, (_, i) => ({
-    id: i,
-    left: Math.random() * 100,
-    size: 2 + Math.random() * 4,
-    duration: 12 + Math.random() * 14,
-    delay: -Math.random() * 20,
-    drift: (Math.random() - 0.5) * 120,
-    hue: Math.random() > 0.5 ? "gold" : "violet",
-  }));
-}
+const FOOTER = {
+  en: "All rights reserved.",
+  he: "כל הזכויות שמורות.",
+};
 
 /* ---------------- MAIN APP COMPONENT ---------------- */
 export default function App() {
   const [lang, setLang] = useState("en");
-  const location = useLocation();
-  const [particles] = useState(() => generateParticles(28));
+  const [splash, setSplash] = useState(true);
+  const [active, setActive] = useState("about");
+  const [showTop, setShowTop] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  const dir = lang === "he" ? "rtl" : "ltr";
+  const about = ABOUT[lang];
 
   // --- עוגייה לכל משתמש שנכנס (נשמרת ל-30 יום) ---
   useEffect(() => {
-    if (!Cookies.get('site_visit')) {
-      Cookies.set('site_visit', 'active', { expires: 30, secure: true, sameSite: 'strict' });
+    if (!Cookies.get("site_visit")) {
+      Cookies.set("site_visit", "active", { expires: 30, secure: true, sameSite: "strict" });
     }
   }, []);
 
-  const navLinks = {
-    en: ["About Me", "Skills", "Projects", "Contact"],
-    he: ["עליי", "שפות תוכנה", "פרוייקטים ", "צור קשר"],
-  };
+  // --- קטע פעיל + כפתור למעלה (קל וחלק, עם requestAnimationFrame) ---
+  useEffect(() => {
+    let ticking = false;
 
-  const siteTitle = {
-    en: "Mohamed Shibli Portfolio 🚀",
-    he: "התיק של מוחמד שיבלי 🚀",
+    const update = () => {
+      ticking = false;
+      setShowTop(window.scrollY > 400);
+
+      const probe = window.scrollY + 160;
+      let current = SECTIONS[0];
+      SECTIONS.forEach((id) => {
+        const el = document.getElementById(id);
+        if (el && el.offsetTop <= probe) current = id;
+      });
+      const atBottom = window.innerHeight + window.scrollY >= document.body.offsetHeight - 4;
+      if (atBottom) current = SECTIONS[SECTIONS.length - 1];
+      setActive(current);
+    };
+
+    const onScroll = () => {
+      if (!ticking) {
+        ticking = true;
+        window.requestAnimationFrame(update);
+      }
+    };
+
+    update();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  const scrollTop = () => {
+    setMenuOpen(false);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   return (
-      <div>
-        <div className="animated-bg" aria-hidden="true">
-          <div className="aura"></div>
-          <div className="shimmer-sweep"></div>
-          <span className="blob blob-1"></span>
-          <span className="blob blob-2"></span>
-          <span className="blob blob-3"></span>
-          <div className="stars"></div>
-          <div className="particles">
-            {particles.map((p) => (
-                <span
-                    key={p.id}
-                    className={`particle particle-${p.hue}`}
-                    style={{
-                      left: `${p.left}%`,
-                      width: `${p.size}px`,
-                      height: `${p.size}px`,
-                      animationDuration: `${p.duration}s`,
-                      animationDelay: `${p.delay}s`,
-                      "--drift": `${p.drift}px`,
-                    }}
-                ></span>
+    <div className="app" dir={dir}>
+      {splash && <Splash onDone={() => setSplash(false)} />}
+
+      {/* ---------- LIGHT BACKGROUND ---------- */}
+      <div className="bg" aria-hidden="true">
+        <span className="bg-orb bg-orb-1"></span>
+        <span className="bg-orb bg-orb-2"></span>
+        <span className="bg-grid"></span>
+        {Array.from({ length: 14 }, (_, i) => (
+          <span
+            key={i}
+            className="spark"
+            style={{
+              left: `${(i * 7.3 + 5) % 100}%`,
+              animationDuration: `${12 + (i % 6) * 3}s`,
+              animationDelay: `${-(i * 1.7)}s`,
+            }}
+          ></span>
+        ))}
+      </div>
+
+      {/* ---------- NAVBAR ---------- */}
+      <nav className="nav">
+        <a href="#about" className="brand">{SITE_TITLE[lang]}</a>
+
+        <div className="links">
+          {SECTIONS.map((id, i) => (
+            <a key={id} href={`#${id}`} className={active === id ? "active" : ""}>
+              {NAV_LINKS[lang][i]}
+            </a>
+          ))}
+        </div>
+
+        <div className="nav-tools">
+          <button
+            className="lang-toggle"
+            style={{ direction: "ltr" }}
+            onClick={() => setLang(lang === "en" ? "he" : "en")}
+            title={lang === "en" ? "עברית" : "English"}
+            aria-label="Change language"
+          >
+            <span className="lang-code">{lang === "en" ? "EN" : "עב"}</span>
+            <span className="lang-globe">🌐</span>
+          </button>
+        </div>
+      </nav>
+
+      <main>
+        {/* ---------- 1. ABOUT / HERO ---------- */}
+        <section id="about" className="section hero">
+          <Reveal className="hero-inner">
+            <span className="hero-badge">● {about.badge}</span>
+            <h1 className="hero-name">{about.name}</h1>
+            <p className="hero-role">{about.role}</p>
+            <div className="hero-actions">
+              <a href="#projects" className="btn btn-main">{about.cta1}</a>
+              <a href="#contact" className="btn btn-ghost">{about.cta2}</a>
+            </div>
+          </Reveal>
+
+          <Reveal tag="h2" className="section-title">{BUILD_TITLE[lang]}</Reveal>
+          <div className="build-grid">
+            {BUILD.map((b, i) => (
+              <Reveal key={b.icon} className="build-card" style={accentStyle(i * 3 + 1)}>
+                <div className="build-icon">{b.icon}</div>
+                <h3>{b.title[lang]}</h3>
+                <p>{b.desc[lang]}</p>
+              </Reveal>
             ))}
           </div>
-        </div>
 
-        <nav className="nav" style={{ direction: lang === "he" ? "rtl" : "ltr" }}>
-          <h2>{siteTitle[lang]}</h2>
-          <div className="links">
-            <Link to="/">{navLinks[lang][0]} </Link>
-            <Link to="/skills">{navLinks[lang][1]}</Link>
-            <Link to="/projects">{navLinks[lang][2]}</Link>
-            <Link to="/contact">{navLinks[lang][3]}</Link>
+          <Reveal className="about-card">
+            <h2 className="section-title">{about.title}</h2>
+            <p className="about-text">{about.desc}</p>
+          </Reveal>
+        </section>
+
+        {/* ---------- 2. SKILLS ---------- */}
+        <section id="skills" className="section">
+          <Reveal tag="h2" className="section-title">{SKILLS_TITLE[lang]}</Reveal>
+          <div className="skills-grid">
+            {SKILLS.map((s, i) => (
+              <Reveal key={s.name} className="skill-card" style={accentStyle(i)}>
+                <div className="icon">{s.icon}</div>
+                <div className="skill-name">{lang === "he" && s.he ? s.he : s.name}</div>
+              </Reveal>
+            ))}
           </div>
-        </nav>
+        </section>
 
-        <div className="lang-bar">
-          <button
-              onClick={() => setLang("en")}
-              className={lang === "en" ? "active" : ""}
-          >
-            English
-          </button>
-          <button
-              onClick={() => setLang("he")}
-              className={lang === "he" ? "active" : ""}
-          >
-            Hebrew
-          </button>
-        </div>
+        {/* ---------- 3. PROJECTS ---------- */}
+        <section id="projects" className="section">
+          <Reveal tag="h2" className="section-title">{PROJECTS_TITLES[lang].main}</Reveal>
+          <div className="projects-grid">
+            {PROJECTS.map((p, i) => (
+              <Reveal key={p.link} className="project-card" style={accentStyle(i)}>
+                <h3>{p.name}</h3>
+                <p>{p.desc[lang]}</p>
+                <a href={p.link} target="_blank" rel="noreferrer" className="project-btn">
+                  {PROJECTS_TITLES[lang].btn}
+                </a>
+              </Reveal>
+            ))}
+          </div>
+        </section>
 
-        <AnimatePresence mode="wait">
-          <Routes location={location} key={location.pathname}>
-            <Route path="/" element={<About lang={lang} />} />
-            <Route path="/skills" element={<Skills lang={lang} />} />
-            <Route path="/projects" element={<Projects lang={lang} />} />
-            <Route path="/contact" element={<Contact lang={lang} />} />
-          </Routes>
-        </AnimatePresence>
+        {/* ---------- 4. CONTACT ---------- */}
+        <section id="contact" className="section">
+          <Reveal tag="h2" className="section-title">{CONTACT_TITLE[lang]}</Reveal>
+          <div className="contact-grid">
+            <Reveal tag="a" href="mailto:mohamed2002ahibli@gmail.com" className="contact-card" style={accentStyle(0)}>
+              📧 Email
+            </Reveal>
+            <Reveal tag="a" href="https://wa.me/972532427351" target="_blank" rel="noreferrer" className="contact-card" style={accentStyle(1)}>
+              💬 WhatsApp
+            </Reveal>
+            <Reveal tag="a" href="https://github.com/MOHOHAMED02" target="_blank" rel="noreferrer" className="contact-card" style={accentStyle(2)}>
+              🐙 GitHub
+            </Reveal>
+          </div>
+        </section>
+      </main>
 
-        <BottomButtons lang={lang} />
+      <footer className="footer">
+        <span style={{ direction: "ltr", display: "inline-block" }}>
+          © {new Date().getFullYear()} {SITE_TITLE[lang]}
+        </span>
+        {" · "}
+        {FOOTER[lang]}
+      </footer>
+
+      {/* ---------- FLOATING DOCK: TOP + CATEGORIES ---------- */}
+      {menuOpen && <div className="dock-overlay" onClick={() => setMenuOpen(false)} />}
+
+      {/* Categories: fixed in the top corner, right under the language button */}
+      <div className="cats" style={{ direction: "ltr" }}>
+        <button className="cats-btn" onClick={() => setMenuOpen((v) => !v)}>
+          ☰ {DOCK[lang].cats}
+        </button>
+        {menuOpen && (
+          <div className="dock-menu" style={{ direction: dir }}>
+            {SECTIONS.map((id, i) => (
+              <a
+                key={id}
+                href={`#${id}`}
+                className={active === id ? "active" : ""}
+                onClick={() => setMenuOpen(false)}
+              >
+                {NAV_LINKS[lang][i]}
+              </a>
+            ))}
+          </div>
+        )}
       </div>
+
+      {/* Back to top: bottom corner */}
+      <button
+        className={`to-top ${showTop ? "show" : ""}`}
+        style={{ direction: "ltr" }}
+        onClick={scrollTop}
+        aria-label="Back to top"
+      >
+        ↑
+      </button>
+    </div>
   );
 }
