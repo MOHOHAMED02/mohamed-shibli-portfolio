@@ -16,13 +16,31 @@ const ACCENTS = [
   { solid: "#14b8a6", glow: "rgba(20, 184, 166, 0.4)" },
 ];
 
-// لون مختلف لكل مربع: بنخلط الترتيب شوي عشان ما يتكرر اللون بجنب بعضو
+// لون مختلف لكل مربع
 function accentStyle(i) {
   const c = ACCENTS[(i * 3) % ACCENTS.length];
   return { "--accent": c.solid, "--accent-glow": c.glow };
 }
 
-/* ---------------- SPLASH SCREEN (opening intro) ---------------- */
+/* ---------------- 3D TILT (card follows the mouse + light spot) ---------------- */
+function tiltMove(e) {
+  const el = e.currentTarget;
+  const r = el.getBoundingClientRect();
+  const x = (e.clientX - r.left) / r.width;
+  const y = (e.clientY - r.top) / r.height;
+  el.style.setProperty("--ry", `${(x - 0.5) * 12}deg`);
+  el.style.setProperty("--rx", `${(0.5 - y) * 12}deg`);
+  el.style.setProperty("--mx", `${x * 100}%`);
+  el.style.setProperty("--my", `${y * 100}%`);
+}
+function tiltLeave(e) {
+  const el = e.currentTarget;
+  el.style.setProperty("--ry", "0deg");
+  el.style.setProperty("--rx", "0deg");
+}
+const tilt = { onMouseMove: tiltMove, onMouseLeave: tiltLeave };
+
+/* ---------------- SPLASH SCREEN ---------------- */
 function Splash({ onDone }) {
   const [leaving, setLeaving] = useState(false);
   const letters = "MOHAMED SHIBLI".split("");
@@ -52,7 +70,7 @@ function Splash({ onDone }) {
         {letters.map((ch, i) => (
           <span
             key={i}
-            className={ch === " " ? "splash-letter space" : "splash-letter"}
+            className="splash-letter"
             style={{ animationDelay: `${0.25 + i * 0.1}s` }}
           >
             {ch === " " ? " " : ch}
@@ -65,7 +83,7 @@ function Splash({ onDone }) {
   );
 }
 
-/* ---------------- LIGHTWEIGHT SCROLL REVEAL (no heavy library) ---------------- */
+/* ---------------- SCROLL REVEAL ---------------- */
 function Reveal({ tag: Tag = "div", className = "", children, ...rest }) {
   const ref = useRef(null);
   const [shown, setShown] = useState(false);
@@ -97,17 +115,110 @@ function Reveal({ tag: Tag = "div", className = "", children, ...rest }) {
   );
 }
 
-const SECTIONS = ["about", "skills", "projects", "contact"];
+/* ---------------- TYPEWRITER (types and deletes phrases) ---------------- */
+function Typewriter({ words }) {
+  const [index, setIndex] = useState(0);
+  const [text, setText] = useState("");
+  const [deleting, setDeleting] = useState(false);
+
+  // אם השפה משתנה - מתחילים מחדש
+  useEffect(() => {
+    setIndex(0);
+    setText("");
+    setDeleting(false);
+  }, [words]);
+
+  useEffect(() => {
+    const word = words[index % words.length];
+    let delay = deleting ? 35 : 75;
+    if (!deleting && text === word) delay = 1600;
+    if (deleting && text === "") delay = 350;
+
+    const t = setTimeout(() => {
+      if (!deleting && text === word) {
+        setDeleting(true);
+      } else if (deleting && text === "") {
+        setDeleting(false);
+        setIndex((v) => (v + 1) % words.length);
+      } else {
+        setText(word.slice(0, text.length + (deleting ? -1 : 1)));
+      }
+    }, delay);
+    return () => clearTimeout(t);
+  }, [text, deleting, index, words]);
+
+  return (
+    <span className="typed">
+      {text}
+      <span className="typed-cursor">|</span>
+    </span>
+  );
+}
+
+/* ---------------- COUNTER (counts up when visible) ---------------- */
+function Counter({ to, suffix = "" }) {
+  const ref = useRef(null);
+  const [value, setValue] = useState(0);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return undefined;
+    let raf = 0;
+    const run = () => {
+      const start = performance.now();
+      const step = (now) => {
+        const p = Math.min((now - start) / 1400, 1);
+        setValue(Math.round(to * (1 - Math.pow(1 - p, 3))));
+        if (p < 1) raf = requestAnimationFrame(step);
+      };
+      raf = requestAnimationFrame(step);
+    };
+    if (!("IntersectionObserver" in window)) {
+      setValue(to);
+      return undefined;
+    }
+    const obs = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          run();
+          obs.disconnect();
+        }
+      },
+      { threshold: 0.4 }
+    );
+    obs.observe(el);
+    return () => {
+      obs.disconnect();
+      cancelAnimationFrame(raf);
+    };
+  }, [to]);
+
+  return (
+    <span ref={ref} className="stat-num" style={{ direction: "ltr" }}>
+      {value}
+      {suffix}
+    </span>
+  );
+}
+
+const SECTIONS = ["about", "skills", "projects", "services", "contact"];
 
 /* ---------------- TEXT CONTENT ---------------- */
+// 📄 קורות חיים: שני קבצי ה-PDF נמצאים בתיקייה public (אנגלית + עברית)
+const CV_FILE = {
+  en: "/Mohamed-Shibli-CV-EN.pdf",
+  he: "/Mohamed-Shibli-CV-HE.pdf",
+};
+
 const ABOUT = {
   en: {
     title: "👨‍💻 About Me",
     badge: "Open to Junior Developer roles",
     name: "Mohamed Shibli",
-    role: "Software Engineering Student · Full-Stack Developer",
+    role: "3rd-year Software Engineering Student · Kinneret College",
     cta1: "View Projects",
     cta2: "Contact Me",
+    cv: "📄 Download CV",
     desc: `Hello everyone! My name is Mohamed Shibli.
 I am a 3rd-year Software Engineering student at Kinneret Academic College.
 
@@ -125,9 +236,10 @@ Currently seeking opportunities to grow as a Junior Developer and contribute to 
     title: "👨‍💻 עליי",
     badge: "פתוח להזדמנויות כמפתח ג'וניור",
     name: "מוחמד שיבלי",
-    role: "סטודנט להנדסת תוכנה · מפתח Full Stack",
+    role: "סטודנט להנדסת תוכנה שנה שלישית · מכללת כנרת",
     cta1: "לפרויקטים",
     cta2: "צור קשר",
+    cv: "📄 הורדת קורות חיים",
     desc: `שלום לכולם! שמי מוחמד שיבלי.
 אני סטודנט להנדסת תוכנה שנה שלישית במכללת כנרת.
 
@@ -143,31 +255,47 @@ Currently seeking opportunities to grow as a Junior Developer and contribute to 
   },
 };
 
-const BUILD_TITLE = { en: "What I Build", he: "מה אני בונה" };
+const TYPED = {
+  en: ["Full-Stack Developer", "React Developer", "I build websites for businesses", "I build apps"],
+  he: ["מפתח Full Stack", "מפתח React", "בונה אתרים לעסקים", "בונה אפליקציות"],
+};
 
-const BUILD = [
+const STATS = {
+  en: ["Projects", "Technologies", "Years of Study"],
+  he: ["פרויקטים", "טכנולוגיות", "שנות לימוד"],
+};
+
+const MARQUEE = [
+  "React", "Node.js", "JavaScript", "Python", "DevOps", "MongoDB", "SQL", "HTML", "CSS", "C", "C++", "C#",
+  "PHP", "Linux", "Arduino", "IoT", "OOP", "QA Testing", "Networking", "Git",
+];
+
+/* ---- המסלול שלי (Timeline) ---- */
+const JOURNEY_TITLE = { en: "🧭 My Journey", he: "🧭 המסלול שלי" };
+
+const JOURNEY = [
   {
-    icon: "📅",
-    title: { en: "Booking Systems", he: "מערכות הזמנת תורים" },
+    year: { en: "Year 1", he: "שנה א'" },
+    title: { en: "Programming Foundations", he: "יסודות התכנות" },
     desc: {
-      en: "Appointment & reservation systems for salons, clinics and restaurants.",
-      he: "מערכות לתיאום תורים והזמנות לעסקים, מספרות, מרפאות ומסעדות.",
+      en: "C, HTML, CSS and JavaScript. Built my first games — Memory Game and Flying Square.",
+      he: "C, HTML, CSS ו-JavaScript. בניתי את המשחקים הראשונים שלי - משחק זיכרון ו-Flying Square.",
     },
   },
   {
-    icon: "🛒",
-    title: { en: "Online Stores", he: "חנויות אונליין" },
+    year: { en: "Year 2", he: "שנה ב'" },
+    title: { en: "OOP, Databases & Hardware", he: "OOP, בסיסי נתונים וחומרה" },
     desc: {
-      en: "E-commerce websites to sell products, with cart and checkout.",
-      he: "אתרי איקומרס למכירת מוצרים, עם עגלת קניות ותשלום.",
+      en: "C++, C#, OOP, SQL and PHP, plus Arduino projects — Simon Game and an IoT Escape Room.",
+      he: "C++, C#, OOP, SQL ו-PHP, יחד עם פרויקטי ארדואינו - משחק סימון וחדר בריחה IoT.",
     },
   },
   {
-    icon: "📱",
-    title: { en: "Apps & Web Apps", he: "אפליקציות ואתרים" },
+    year: { en: "Year 3", he: "שנה ג'" },
+    title: { en: "Full-Stack & Real Clients", he: "Full Stack ולקוחות אמיתיים" },
     desc: {
-      en: "Custom applications and business websites built to your needs.",
-      he: "אפליקציות ואתרים לעסקים, מותאמים אישית לצרכים שלך.",
+      en: "React, Node.js, MongoDB, Linux, operating systems and networking. Currently learning Python and DevOps, and building websites and apps for businesses.",
+      he: "React, Node.js, MongoDB, Linux, מערכות הפעלה ותקשורת ורשתות. כרגע לומד Python ו-DevOps, ובונה אתרים ואפליקציות לעסקים.",
     },
   },
 ];
@@ -189,6 +317,8 @@ const SKILLS = [
   { name: "PHP", icon: "🐘" },
   { name: "SQL", icon: "🗄️" },
   { name: "MongoDB", icon: "🍃" },
+  { name: "Python", icon: "🐍" },
+  { name: "DevOps", icon: "♾️" },
   { name: "QA Testing", icon: "🧪" },
   { name: "OOP", icon: "🧩" },
   { name: "Arduino", icon: "🔌" },
@@ -198,13 +328,28 @@ const SKILLS = [
 ];
 
 const PROJECTS_TITLES = {
-  en: { main: "💼 My Projects", btn: "🔗 View Project" },
-  he: { main: "💼 פרוייקטים שלי", btn: "🔗 צפה בפרויקט" },
+  en: { main: "💼 My Projects", btn: "🔗 View Code", demo: "🌐 Visit Website", mine: "My Business" },
+  he: { main: "💼 פרוייקטים שלי", btn: "🔗 צפה בקוד", demo: "🌐 לאתר החי", mine: "העסק שלי" },
 };
+
+// אפשר להוסיף לכל פרויקט:  image: "/projects/name.png"  (תמונה בתיקייה public)
+//                         demo: "https://....vercel.app" (קישור לאתר חי)
+const WEBIXA = "https://webixa-design.vercel.app";
 
 const PROJECTS = [
   {
-    name: "🎮 SIMON GAME ARDUINO",
+    icon: "🌐",
+    featured: true,
+    name: "Webixa — Web Design Studio",
+    desc: {
+      en: "My own web studio. I design and build websites, online stores, appointment-booking systems, digital menus and mobile apps for small businesses — in Arabic, Hebrew and English — from the first meeting with the client to launch and ongoing maintenance.",
+      he: "סטודיו האתרים שלי. אני מעצב ובונה אתרים, חנויות אונליין, מערכות הזמנת תורים, תפריטים דיגיטליים ואפליקציות לעסקים קטנים - בערבית, עברית ואנגלית - מהפגישה הראשונה עם הלקוח ועד העלאה לאוויר ותחזוקה שוטפת.",
+    },
+    demo: WEBIXA,
+  },
+  {
+    icon: "🎮",
+    name: "SIMON GAME ARDUINO",
     desc: {
       en: "Arduino-based Simon Says game with LEDs and logic control.",
       he: "משחק סימון מבוסס ארדואינו עם נורות LED ובקרת לוגיקה.",
@@ -212,7 +357,8 @@ const PROJECTS = [
     link: "https://github.com/MOHOHAMED02/SIMON-GAME-ARDUINO",
   },
   {
-    name: "🕹️ Flying Square Game",
+    icon: "🕹️",
+    name: "Flying Square Game",
     desc: {
       en: "JavaScript game with movement & collision mechanics.",
       he: "משחק JavaScript עם מכניקת תנועה והתנגשויות.",
@@ -220,7 +366,8 @@ const PROJECTS = [
     link: "https://github.com/MOHOHAMED02/flying-square",
   },
   {
-    name: "🧠 Memory Game",
+    icon: "🧠",
+    name: "Memory Game",
     desc: {
       en: "Classic memory card game built with JavaScript.",
       he: "משחק זיכרון קלאסי שנבנה עם JavaScript.",
@@ -228,7 +375,8 @@ const PROJECTS = [
     link: "https://github.com/MOHOHAMED02/memory-game",
   },
   {
-    name: "✅ Todo List App",
+    icon: "✅",
+    name: "Todo List App",
     desc: {
       en: "Task manager with add, delete and complete features.",
       he: "אפליקציית ניהול משימות עם אפשרות הוספה, מחיקה וסימון לביצוע.",
@@ -236,7 +384,8 @@ const PROJECTS = [
     link: "https://github.com/MOHOHAMED02/finish-todo-list",
   },
   {
-    name: "⭐ Project Rating System",
+    icon: "⭐",
+    name: "Project Rating System",
     desc: {
       en: "System for rating and managing projects.",
       he: "מערכת לניהול ודירוג פרויקטים.",
@@ -244,7 +393,8 @@ const PROJECTS = [
     link: "https://github.com/MOHOHAMED02/project_rating_system",
   },
   {
-    name: "🔐 Escape Room IoT",
+    icon: "🔐",
+    name: "Escape Room IoT",
     desc: {
       en: "IoT based escape room project using Arduino and smart logic systems.",
       he: "פרויקט חדר בריחה מבוסס IoT עם ארדואינו ולוגיקה חכמה.",
@@ -252,7 +402,8 @@ const PROJECTS = [
     link: "https://github.com/MOHOHAMED02/escape-room-iot",
   },
   {
-    name: "🪪 React User Cards Editor",
+    icon: "🪪",
+    name: "React User Cards Editor",
     desc: {
       en: "An array of 6 user objects (name, ID, address, image) displayed as clickable cards. Clicking a card opens a shared edit panel with labeled inputs (ID stays read-only) and a save button that updates the card's data.",
       he: "מערך של 6 אובייקטים (שם, ת.ז, כתובת, תמונה) המוצגים ככרטיסיות לחיצות. לחיצה על כרטיסייה פותחת מקטע עריכה משותף עם אינפוטים מתויגים (שדה ת.ז קבוע) וכפתור שמירה שמעדכן את פרטי הכרטיסייה.",
@@ -260,7 +411,8 @@ const PROJECTS = [
     link: "https://github.com/MOHOHAMED02/react-user-cards-editor",
   },
   {
-    name: "🚨 Smart Panic Button IoT",
+    icon: "🚨",
+    name: "Smart Panic Button IoT",
     desc: {
       en: "Real-time smart panic-button system built around an interrupt-driven physical button and a clear state machine (routine / panic / reset). Pressing it triggers a fast-blinking red LED and a rising-falling buzzer, streams live JSON status (device ID + state) over MQTT/WebSocket, and the alert can only be cleared from a live web dashboard.",
       he: "מערכת לחצן מצוקה חכמה בזמן אמת, מבוססת על לחצן פיזי עם Interrupt ומכונת מצבים ברורה (שגרה / מצוקה / איפוס). לחיצה מפעילה LED אדום מהבהב מהר וזמזום עולה-יורד, שולחת סטטוס JSON חי (מזהה מכשיר + מצב) דרך MQTT/WebSocket, וניתן לבטל את ההתראה רק דרך דף אינטרנט חי.",
@@ -269,30 +421,81 @@ const PROJECTS = [
   },
 ];
 
+/* ---- שירותים וחבילות ---- */
+const SERVICES_TITLE = { en: "🛠️ Services & Packages", he: "🛠️ שירותים וחבילות" };
+const SERVICES_TEXT = {
+  en: { price: "Custom quote", btn: "Get a Quote", popular: "Most Popular", studio: "🌐 See my studio — Webixa" },
+  he: { price: "הצעת מחיר אישית", btn: "לקבלת הצעת מחיר", popular: "הכי פופולרי", studio: "🌐 לסטודיו שלי - Webixa" },
+};
+
+const SERVICES = [
+  {
+    icon: "🚀",
+    title: { en: "Landing Page", he: "דף נחיתה" },
+    desc: { en: "A sharp one-page site that presents your business.", he: "אתר של עמוד אחד שמציג את העסק בצורה חדה." },
+    features: {
+      en: ["Modern one-page design", "Fits mobile & desktop", "WhatsApp & call buttons", "Contact form"],
+      he: ["עיצוב מודרני בעמוד אחד", "מותאם למובייל ולמחשב", "כפתורי וואטסאפ וחיוג", "טופס יצירת קשר"],
+    },
+  },
+  {
+    icon: "📅",
+    featured: true,
+    title: { en: "Business Site + Booking", he: "אתר עסקי + הזמנת תורים" },
+    desc: { en: "A full website with an online booking system.", he: "אתר מלא עם מערכת הזמנת תורים אונליין." },
+    features: {
+      en: ["Multi-page website", "Online appointment booking", "Admin panel to manage bookings", "Gallery, prices & reviews"],
+      he: ["אתר מרובה עמודים", "הזמנת תורים אונליין", "פאנל ניהול לתורים", "גלריה, מחירון וביקורות"],
+    },
+  },
+  {
+    icon: "🛒",
+    title: { en: "Online Store", he: "חנות אונליין" },
+    desc: { en: "Sell your products online, 24/7.", he: "מכירת המוצרים שלך אונליין, 24/7." },
+    features: {
+      en: ["Product catalog", "Shopping cart & checkout", "Order management", "Admin panel for products"],
+      he: ["קטלוג מוצרים", "עגלת קניות ותשלום", "ניהול הזמנות", "פאנל ניהול מוצרים"],
+    },
+  },
+];
+
 const CONTACT_TITLE = {
   en: "📞 Contact & Collaboration",
   he: "📞 צור קשר ושיתוף פעולה",
 };
 
+const FORM = {
+  en: {
+    title: "Send me a message",
+    name: "Your name",
+    msg: "Your message...",
+    wa: "💬 Send via WhatsApp",
+    mail: "📧 Send via Email",
+    hello: "Hi Mohamed, my name is",
+    subject: "Message from your portfolio",
+  },
+  he: {
+    title: "שלחו לי הודעה",
+    name: "השם שלך",
+    msg: "ההודעה שלך...",
+    wa: "💬 שליחה בוואטסאפ",
+    mail: "📧 שליחה במייל",
+    hello: "היי מוחמד, שמי",
+    subject: "הודעה מאתר הפורטפוליו",
+  },
+};
+
 const NAV_LINKS = {
-  en: ["About Me", "Skills", "Projects", "Contact"],
-  he: ["עליי", "כישורים", "פרוייקטים", "צור קשר"],
+  en: ["About Me", "Skills", "Projects", "Services", "Contact"],
+  he: ["עליי", "כישורים", "פרוייקטים", "שירותים", "צור קשר"],
 };
 
-const SITE_TITLE = {
-  en: "Mohamed Shibli",
-  he: "מוחמד שיבלי",
-};
+const SITE_TITLE = { en: "Mohamed Shibli", he: "מוחמד שיבלי" };
+const DOCK = { en: { cats: "Categories" }, he: { cats: "קטגוריות" } };
+const FOOTER = { en: "All rights reserved.", he: "כל הזכויות שמורות." };
 
-const DOCK = {
-  en: { top: "Top", cats: "Categories" },
-  he: { top: "למעלה", cats: "קטגוריות" },
-};
-
-const FOOTER = {
-  en: "All rights reserved.",
-  he: "כל הזכויות שמורות.",
-};
+const PHONE = "972532427351";
+const EMAIL = "mohamed2002ahibli@gmail.com";
 
 /* ---------------- MAIN APP COMPONENT ---------------- */
 export default function App() {
@@ -301,9 +504,13 @@ export default function App() {
   const [active, setActive] = useState("about");
   const [showTop, setShowTop] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [formName, setFormName] = useState("");
+  const [formMsg, setFormMsg] = useState("");
+  const progressRef = useRef(null);
 
   const dir = lang === "he" ? "rtl" : "ltr";
   const about = ABOUT[lang];
+  const form = FORM[lang];
 
   // --- עוגייה לכל משתמש שנכנס (נשמרת ל-30 יום) ---
   useEffect(() => {
@@ -312,22 +519,27 @@ export default function App() {
     }
   }, []);
 
-  // --- קטע פעיל + כפתור למעלה (קל וחלק, עם requestAnimationFrame) ---
+  // --- קטע פעיל + כפתור למעלה + פס התקדמות ---
   useEffect(() => {
     let ticking = false;
 
     const update = () => {
       ticking = false;
-      setShowTop(window.scrollY > 400);
+      const y = window.scrollY;
+      setShowTop(y > 400);
 
-      const probe = window.scrollY + 160;
+      const max = document.documentElement.scrollHeight - window.innerHeight;
+      if (progressRef.current) {
+        progressRef.current.style.transform = `scaleX(${max > 0 ? Math.min(y / max, 1) : 0})`;
+      }
+
+      const probe = y + 160;
       let current = SECTIONS[0];
       SECTIONS.forEach((id) => {
         const el = document.getElementById(id);
         if (el && el.offsetTop <= probe) current = id;
       });
-      const atBottom = window.innerHeight + window.scrollY >= document.body.offsetHeight - 4;
-      if (atBottom) current = SECTIONS[SECTIONS.length - 1];
+      if (max > 0 && y >= max - 4) current = SECTIONS[SECTIONS.length - 1];
       setActive(current);
     };
 
@@ -348,11 +560,22 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  // --- טופס יצירת קשר: נשלח ישירות לוואטסאפ או למייל ---
+  const fullMessage = `${form.hello} ${formName.trim()}.\n${formMsg.trim()}`;
+  const formReady = formName.trim() !== "" && formMsg.trim() !== "";
+  const waLink = `https://wa.me/${PHONE}?text=${encodeURIComponent(fullMessage)}`;
+  const mailLink = `mailto:${EMAIL}?subject=${encodeURIComponent(form.subject)}&body=${encodeURIComponent(fullMessage)}`;
+
   return (
     <div className="app" dir={dir}>
       {splash && <Splash onDone={() => setSplash(false)} />}
 
-      {/* ---------- LIGHT BACKGROUND ---------- */}
+      {/* scroll progress bar */}
+      <div className="progress" style={{ direction: "ltr" }}>
+        <div className="progress-fill" ref={progressRef}></div>
+      </div>
+
+      {/* ---------- BACKGROUND ---------- */}
       <div className="bg" aria-hidden="true">
         <span className="bg-orb bg-orb-1"></span>
         <span className="bg-orb bg-orb-2"></span>
@@ -397,33 +620,64 @@ export default function App() {
       </nav>
 
       <main>
-        {/* ---------- 1. ABOUT / HERO ---------- */}
+        {/* ---------- 1. HERO + ABOUT ---------- */}
         <section id="about" className="section hero">
           <Reveal className="hero-inner">
             <span className="hero-badge">● {about.badge}</span>
             <h1 className="hero-name">{about.name}</h1>
+            <p className="hero-typed">
+              <Typewriter words={TYPED[lang]} />
+            </p>
             <p className="hero-role">{about.role}</p>
             <div className="hero-actions">
               <a href="#projects" className="btn btn-main">{about.cta1}</a>
+              <a href={CV_FILE[lang]} download className="btn btn-cv">{about.cv}</a>
               <a href="#contact" className="btn btn-ghost">{about.cta2}</a>
             </div>
           </Reveal>
 
-          <Reveal tag="h2" className="section-title">{BUILD_TITLE[lang]}</Reveal>
-          <div className="build-grid">
-            {BUILD.map((b, i) => (
-              <Reveal key={b.icon} className="build-card" style={accentStyle(i * 3 + 1)}>
-                <div className="build-icon">{b.icon}</div>
-                <h3>{b.title[lang]}</h3>
-                <p>{b.desc[lang]}</p>
-              </Reveal>
-            ))}
+          {/* counters */}
+          <Reveal className="stats">
+            <div className="stat">
+              <Counter to={PROJECTS.length} suffix="+" />
+              <span className="stat-label">{STATS[lang][0]}</span>
+            </div>
+            <div className="stat">
+              <Counter to={SKILLS.length} />
+              <span className="stat-label">{STATS[lang][1]}</span>
+            </div>
+            <div className="stat">
+              <Counter to={3} />
+              <span className="stat-label">{STATS[lang][2]}</span>
+            </div>
+          </Reveal>
+
+          {/* moving tech strip */}
+          <div className="marquee" style={{ direction: "ltr" }} aria-hidden="true">
+            <div className="marquee-track">
+              {[...MARQUEE, ...MARQUEE].map((t, i) => (
+                <span key={i} className="marquee-item">{t}</span>
+              ))}
+            </div>
           </div>
 
           <Reveal className="about-card">
             <h2 className="section-title">{about.title}</h2>
             <p className="about-text">{about.desc}</p>
           </Reveal>
+
+          {/* timeline */}
+          <Reveal tag="h2" className="section-title journey-title">{JOURNEY_TITLE[lang]}</Reveal>
+          <div className="timeline">
+            {JOURNEY.map((j, i) => (
+              <Reveal key={i} className="timeline-item" style={accentStyle(i)}>
+                <span className="timeline-dot"></span>
+                <span className="timeline-year">{j.year[lang]}</span>
+                <h3>{j.title[lang]}</h3>
+                <p>{j.desc[lang]}</p>
+              </Reveal>
+            ))}
+          </div>
         </section>
 
         {/* ---------- 2. SKILLS ---------- */}
@@ -431,7 +685,7 @@ export default function App() {
           <Reveal tag="h2" className="section-title">{SKILLS_TITLE[lang]}</Reveal>
           <div className="skills-grid">
             {SKILLS.map((s, i) => (
-              <Reveal key={s.name} className="skill-card" style={accentStyle(i)}>
+              <Reveal key={s.name} className="skill-card tilt" style={accentStyle(i)} {...tilt}>
                 <div className="icon">{s.icon}</div>
                 <div className="skill-name">{lang === "he" && s.he ? s.he : s.name}</div>
               </Reveal>
@@ -444,28 +698,135 @@ export default function App() {
           <Reveal tag="h2" className="section-title">{PROJECTS_TITLES[lang].main}</Reveal>
           <div className="projects-grid">
             {PROJECTS.map((p, i) => (
-              <Reveal key={p.link} className="project-card" style={accentStyle(i)}>
-                <h3>{p.name}</h3>
-                <p>{p.desc[lang]}</p>
-                <a href={p.link} target="_blank" rel="noreferrer" className="project-btn">
-                  {PROJECTS_TITLES[lang].btn}
-                </a>
+              <Reveal
+                key={p.name}
+                className={`project-card tilt ${p.featured ? "featured" : ""}`}
+                style={accentStyle(i)}
+                {...tilt}
+              >
+                {p.featured && <span className="service-tag">★ {PROJECTS_TITLES[lang].mine}</span>}
+                <div className="project-cover">
+                  {p.image ? (
+                    <img src={p.image} alt={p.name} loading="lazy" />
+                  ) : (
+                    <span className="project-emoji">{p.icon}</span>
+                  )}
+                </div>
+                <div className="project-body">
+                  <h3>{p.name}</h3>
+                  <p>{p.desc[lang]}</p>
+                  <div className="project-actions">
+                    {p.demo && (
+                      <a href={p.demo} target="_blank" rel="noreferrer" className="project-btn">
+                        {PROJECTS_TITLES[lang].demo}
+                      </a>
+                    )}
+                    {p.link && (
+                      <a
+                        href={p.link}
+                        target="_blank"
+                        rel="noreferrer"
+                        className={p.demo ? "project-btn outline" : "project-btn"}
+                      >
+                        {PROJECTS_TITLES[lang].btn}
+                      </a>
+                    )}
+                  </div>
+                </div>
               </Reveal>
             ))}
           </div>
         </section>
 
-        {/* ---------- 4. CONTACT ---------- */}
+        {/* ---------- 4. SERVICES ---------- */}
+        <section id="services" className="section">
+          <Reveal tag="h2" className="section-title">{SERVICES_TITLE[lang]}</Reveal>
+          <Reveal className="studio-link">
+            <a href={WEBIXA} target="_blank" rel="noreferrer" className="btn btn-ghost">
+              {SERVICES_TEXT[lang].studio}
+            </a>
+          </Reveal>
+          <div className="services-grid">
+            {SERVICES.map((s, i) => (
+              <Reveal
+                key={s.icon}
+                className={`service-card tilt ${s.featured ? "featured" : ""}`}
+                style={accentStyle(i * 2)}
+                {...tilt}
+              >
+                {s.featured && <span className="service-tag">★ {SERVICES_TEXT[lang].popular}</span>}
+                <div className="service-icon">{s.icon}</div>
+                <h3>{s.title[lang]}</h3>
+                <p className="service-desc">{s.desc[lang]}</p>
+                <ul>
+                  {s.features[lang].map((f) => (
+                    <li key={f}>{f}</li>
+                  ))}
+                </ul>
+                <div className="service-price">{SERVICES_TEXT[lang].price}</div>
+                <a href="#contact" className="project-btn">{SERVICES_TEXT[lang].btn}</a>
+              </Reveal>
+            ))}
+          </div>
+        </section>
+
+        {/* ---------- 5. CONTACT ---------- */}
         <section id="contact" className="section">
           <Reveal tag="h2" className="section-title">{CONTACT_TITLE[lang]}</Reveal>
+
+          <Reveal className="contact-form">
+            <h3>{form.title}</h3>
+            <input
+              type="text"
+              placeholder={form.name}
+              value={formName}
+              onChange={(e) => setFormName(e.target.value)}
+            />
+            <textarea
+              rows="4"
+              placeholder={form.msg}
+              value={formMsg}
+              onChange={(e) => setFormMsg(e.target.value)}
+            />
+            <div className="form-actions">
+              <a
+                href={formReady ? waLink : undefined}
+                target="_blank"
+                rel="noreferrer"
+                className={`btn btn-main ${formReady ? "" : "disabled"}`}
+              >
+                {form.wa}
+              </a>
+              <a href={formReady ? mailLink : undefined} className={`btn btn-ghost ${formReady ? "" : "disabled"}`}>
+                {form.mail}
+              </a>
+            </div>
+          </Reveal>
+
           <div className="contact-grid">
-            <Reveal tag="a" href="mailto:mohamed2002ahibli@gmail.com" className="contact-card" style={accentStyle(0)}>
+            <Reveal tag="a" href={`mailto:${EMAIL}`} className="contact-card tilt" style={accentStyle(0)} {...tilt}>
               📧 Email
             </Reveal>
-            <Reveal tag="a" href="https://wa.me/972532427351" target="_blank" rel="noreferrer" className="contact-card" style={accentStyle(1)}>
+            <Reveal
+              tag="a"
+              href={`https://wa.me/${PHONE}`}
+              target="_blank"
+              rel="noreferrer"
+              className="contact-card tilt"
+              style={accentStyle(1)}
+              {...tilt}
+            >
               💬 WhatsApp
             </Reveal>
-            <Reveal tag="a" href="https://github.com/MOHOHAMED02" target="_blank" rel="noreferrer" className="contact-card" style={accentStyle(2)}>
+            <Reveal
+              tag="a"
+              href="https://github.com/MOHOHAMED02"
+              target="_blank"
+              rel="noreferrer"
+              className="contact-card tilt"
+              style={accentStyle(2)}
+              {...tilt}
+            >
               🐙 GitHub
             </Reveal>
           </div>
@@ -480,10 +841,9 @@ export default function App() {
         {FOOTER[lang]}
       </footer>
 
-      {/* ---------- FLOATING DOCK: TOP + CATEGORIES ---------- */}
+      {/* ---------- CATEGORIES (top corner) ---------- */}
       {menuOpen && <div className="dock-overlay" onClick={() => setMenuOpen(false)} />}
 
-      {/* Categories: fixed in the top corner, right under the language button */}
       <div className="cats" style={{ direction: "ltr" }}>
         <button className="cats-btn" onClick={() => setMenuOpen((v) => !v)}>
           ☰ {DOCK[lang].cats}
@@ -504,7 +864,7 @@ export default function App() {
         )}
       </div>
 
-      {/* Back to top: bottom corner */}
+      {/* ---------- BACK TO TOP ---------- */}
       <button
         className={`to-top ${showTop ? "show" : ""}`}
         style={{ direction: "ltr" }}
